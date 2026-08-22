@@ -1,0 +1,12 @@
+.venv-1/
+zip/
+
+# Bulk source and generated image data
+frames/dataset/
+frames/mouth_crops/
+frames/mouth_dataset/
+
+# Local notebook/runtime artifacts
+.ipynb_checkpoints/
+__pycache__/
+*.pyc
