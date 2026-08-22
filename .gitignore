@@ -1,10 +1,13 @@
 .venv-1/
 zip/
 
-# Bulk source and generated image data
-frames/dataset/
-frames/mouth_crops/
-frames/mouth_dataset/
+# Bulk source and generated dataset data
+frames/
+
+# Temporary and superseded local notebook copies
+*.notebook.json
+nb1.ipynb
+nb3.ipynb
 
 # Local notebook/runtime artifacts
 .ipynb_checkpoints/
