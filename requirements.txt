@@ -1,0 +1,19 @@
+# Core
+numpy
+opencv-python
+mediapipe
+Pillow
+tqdm
+
+# ML / training
+torch
+torchvision
+scikit-learn
+
+# Visualization
+matplotlib
+pandas
+
+# Notebooks
+jupyterlab
+ipywidgets
