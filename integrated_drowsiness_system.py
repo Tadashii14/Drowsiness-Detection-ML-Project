@@ -55,16 +55,16 @@ PROLONGED_CLOSURE_THRESHOLD = 1.00
 # Mouth CNN
 NUM_CLASSES = 3
 CLASS_NAMES = ["Closed", "Talking", "Yawn"]
-MOUTH_HISTORY_SIZE = 20
+MOUTH_HISTORY_SIZE = 8
 
 # Fusion
 EYE_WEIGHT = 0.70
 MOUTH_WEIGHT = 0.30
-NORMAL_THRESHOLD = 40.0
-DROWSY_THRESHOLD = 70.0
+NORMAL_THRESHOLD = 30.0
+DROWSY_THRESHOLD = 55.0
 FINAL_SCORE_DECAY_PER_SECOND = 1.5
-EYE_PROLONGED_POINTS = 30.0
-EYE_LONG_BLINK_POINTS = 5.0
+EYE_PROLONGED_POINTS = 45.0
+EYE_LONG_BLINK_POINTS = 10.0
 MOUTH_YAWN_POINTS = 20.0
 EYE_EVENT_HISTORY_SECONDS = 30
 
@@ -75,12 +75,14 @@ EYE_EVENT_HISTORY_SECONDS = 30
 
 class CameraManager:
 
-    def __init__(self, camera_index=0, width=1280, height=720, fps=30, mirror=True):
+    def __init__(self, camera_index=0, width=1280, height=720, fps=30, mirror=True,
+                 backend=cv2.CAP_ANY):
         self.camera_index = camera_index
         self.width = width
         self.height = height
         self.fps = fps
         self.mirror = mirror
+        self.backend = backend
         self.cap = None
         self.is_open = False
 
@@ -88,7 +90,7 @@ class CameraManager:
         if self.is_open:
             return True
 
-        self.cap = cv2.VideoCapture(self.camera_index)
+        self.cap = cv2.VideoCapture(self.camera_index, self.backend)
 
         if not self.cap.isOpened():
             self.cap.release()
@@ -122,6 +124,16 @@ class CameraManager:
             self.cap.release()
         self.cap = None
         self.is_open = False
+
+    def set_property(self, property_id, value):
+        if self.cap is None or not self.is_open:
+            return False
+        return bool(self.cap.set(property_id, value))
+
+    def get_property(self, property_id):
+        if self.cap is None or not self.is_open:
+            return None
+        return self.cap.get(property_id)
 
 
 # ============================================================
@@ -442,7 +454,7 @@ def classify_drowsiness_state(final_score):
 
 
 def update_fusion_state(eye_temporal_state, mouth_prediction_history,
-                        current_time, state, eye_events):
+                        current_time, state, eye_events, mouth_available=True):
     """Update eye/mouth/final scores with gradual decay."""
     # Record newly completed eye event
     last_event = eye_temporal_state["last_closure_event"]
@@ -468,7 +480,12 @@ def update_fusion_state(eye_temporal_state, mouth_prediction_history,
 
     eye_score = calculate_eye_score(eye_temporal_state, current_time, eye_events)
     mouth_score = calculate_mouth_score(mouth_prediction_history)
-    final_score = calculate_final_drowsiness_score(eye_score, mouth_score)
+    if not mouth_available:
+        # Do not treat an invalid crop as a normal closed mouth signal.
+        mouth_score = state.get("mouth_score", 0.0)
+        final_score = eye_score
+    else:
+        final_score = calculate_final_drowsiness_score(eye_score, mouth_score)
 
     # Score decay / recovery
     elapsed = current_time - state["last_update_time"]
