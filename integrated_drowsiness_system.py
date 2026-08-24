@@ -16,6 +16,7 @@
 
 from pathlib import Path
 from collections import deque
+import argparse
 import time
 
 import cv2
@@ -541,18 +542,28 @@ def draw_landmarks(display_frame, landmarks, w, h):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Integrated drowsiness detection")
+    parser.add_argument("--source", default=str(CAMERA_INDEX),
+                        help="Camera index or IP stream URL (e.g. http://192.168.1.x:8080/video)")
+    args = parser.parse_args()
+
+    try:
+        source = int(args.source)
+    except ValueError:
+        source = args.source
+
     print("=" * 60)
     print("INTEGRATED DROWSINESS DETECTION SYSTEM")
     print("=" * 60)
     print(f"Device        : {device}")
     print(f"Mouth model   : {MOUTH_MODEL_PATH}")
     print(f"MediaPipe     : {MEDIAPIPE_MODEL_PATH}")
-    print(f"Camera        : {CAMERA_INDEX} @ {FRAME_WIDTH}x{FRAME_HEIGHT}")
+    print(f"Source        : {source}")
     print("Press Q in the video window to quit.")
     print("=" * 60)
 
     camera = CameraManager(
-        camera_index=CAMERA_INDEX,
+        camera_index=source,
         width=FRAME_WIDTH,
         height=FRAME_HEIGHT,
         fps=TARGET_FPS,
